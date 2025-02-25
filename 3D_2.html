@@ -6,10 +6,10 @@
     <title>3D 立方體展示</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body { 
-            margin: 0; 
-            overflow: hidden; 
-            background: linear-gradient(135deg, #1e3c72, #2a5298);
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -17,43 +17,86 @@
             touch-action: none;
         }
         canvas { display: block; }
+        .speed-control {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+        }
+        .dot {
+            width: 15px;
+            height: 15px;
+            background-color: gray;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .active {
+            background-color: white;
+        }
     </style>
 </head>
 <body>
+    <div class="speed-control">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+    </div>
     <script>
-        // 建立場景
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
 
-        // 加入光源
-        const light = new THREE.PointLight(0xffffff, 1, 100);
-        light.position.set(10, 10, 10);
-        scene.add(light);
+        const textureLoader = new THREE.TextureLoader();
+        textureLoader.load('https://threejsfundamentals.org/threejs/resources/images/starfield.png', function (texture) {
+            scene.background = texture;
+        });
 
-        const ambientLight = new THREE.AmbientLight(0x404040);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(5, 5, 5);
+        directionalLight.castShadow = true;
+        scene.add(directionalLight);
+
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
         scene.add(ambientLight);
 
-        // 建立立方體
         const geometry = new THREE.BoxGeometry();
-        const material = new THREE.MeshStandardMaterial({ color: 0x87CEFA, metalness: 0.7, roughness: 0.3 }); // 水藍色
+        const material = new THREE.MeshStandardMaterial({ color: 0x87CEFA, metalness: 0.7, roughness: 0.3 });
         const cube = new THREE.Mesh(geometry, material);
+        cube.castShadow = true;
+        cube.receiveShadow = true;
         scene.add(cube);
 
         camera.position.z = 5;
 
-        let speed = 0.01;
+        let speedLevels = [0.01, 0.02, 0.03, 0.04, 0.05, 0];
+        let speedIndex = 0;
         let rotateX = 0;
         let rotateY = 0;
-        let isSpeedBoosted = false;
+        let isMouseDown = false;
         let touchStartX = 0, touchStartY = 0;
 
-        // 監聽滑鼠事件 (電腦)
-        let isMouseDown = false;
-        window.addEventListener('mousedown', () => { isSpeedBoosted = true; isMouseDown = true; });
-        window.addEventListener('mouseup', () => { isSpeedBoosted = false; isMouseDown = false; });
+        const dots = document.querySelectorAll('.dot');
+        function updateSpeed() {
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index < speedIndex);
+            });
+        }
+        updateSpeed();
+
+        document.querySelector('.speed-control').addEventListener('click', () => {
+            speedIndex = (speedIndex + 1) % speedLevels.length;
+            updateSpeed();
+        });
+
+        window.addEventListener('mousedown', () => { isMouseDown = true; });
+        window.addEventListener('mouseup', () => { isMouseDown = false; });
+
         window.addEventListener('mousemove', (event) => {
             if (isMouseDown) {
                 rotateX = event.movementY * 0.005;
@@ -61,15 +104,13 @@
             }
         });
 
-        // 監聽觸控事件 (手機)
         window.addEventListener('touchstart', (event) => {
             if (event.touches.length === 1) {
                 touchStartX = event.touches[0].clientX;
                 touchStartY = event.touches[0].clientY;
-                isSpeedBoosted = true;
             }
         });
-        
+
         window.addEventListener('touchmove', (event) => {
             let touchX = event.touches[0].clientX;
             let touchY = event.touches[0].clientY;
@@ -78,24 +119,15 @@
             touchStartX = touchX;
             touchStartY = touchY;
         });
-        
-        window.addEventListener('touchend', () => {
-            rotateX = 0;
-            rotateY = 0;
-            isSpeedBoosted = false;
-        });
 
-        // 動畫函式
         function animate() {
             requestAnimationFrame(animate);
-            let currentSpeed = isSpeedBoosted ? speed * 2 : speed;
-            cube.rotation.x += rotateX + currentSpeed;
-            cube.rotation.y += rotateY + currentSpeed;
+            cube.rotation.x += rotateX + speedLevels[speedIndex];
+            cube.rotation.y += rotateY + speedLevels[speedIndex];
             renderer.render(scene, camera);
         }
         animate();
 
-        // 當視窗大小改變時，調整渲染器尺寸
         window.addEventListener('resize', () => {
             renderer.setSize(window.innerWidth, window.innerHeight);
             camera.aspect = window.innerWidth / window.innerHeight;
