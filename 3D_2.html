@@ -36,13 +36,13 @@
         }
         #easter-egg {
             display: none;
-            position: fixed; /* 改為固定定位 */
-            top: 0;          /* 置頂 */
-            left: 0;         /* 置左 */
-            width: 100%;     /* 寬度100% */
-            height: 100%;    /* 高度100% */
-            object-fit: cover; /* 確保圖片按比例填充 */
-            z-index: 1000;   /* 確保在最上層 */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1000;
         }
     </style>
 </head>
@@ -54,8 +54,11 @@
         <div class="dot"></div>
         <div class="dot"></div>
     </div>
-    <img id="easter-egg" src="https://i.pinimg.com/736x/16/c3/09/16c309041e96afda74b3564ffc8fda11.jpg" alt="小彩蛋圖片">
+
+    <img id="easter-egg" src="https://i.pinimg.com/736x/16/c3/09/16c309041e96afda74b3564ffc8fda11.jpg" alt="Easter Egg">
+
     <script>
+        // 建立場景、相機、渲染器
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -63,74 +66,86 @@
         renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
 
+        // 設定背景紋理
         const textureLoader = new THREE.TextureLoader();
-        textureLoader.load('https://threejsfundamentals.org/threejs/resources/images/starfield.png', function (texture) {
+        textureLoader.load('https://threejsfundamentals.org/threejs/resources/images/starfield.png', (texture) => {
             scene.background = texture;
         });
 
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(5, 5, 5);
-        directionalLight.castShadow = true;
-        scene.add(directionalLight);
+        // 燈光設定
+        const light = new THREE.DirectionalLight(0xffffff, 0.8);
+        light.position.set(5, 5, 5);
+        light.castShadow = true;
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0x404040, 0.5));
 
-        const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
-        scene.add(ambientLight);
-
-        const geometry = new THREE.BoxGeometry();
-        const material = new THREE.MeshStandardMaterial({ color: 0x87CEFA, metalness: 0.7, roughness: 0.3 });
-        const cube = new THREE.Mesh(geometry, material);
+        // 建立立方體
+        const cube = new THREE.Mesh(
+            new THREE.BoxGeometry(),
+            new THREE.MeshStandardMaterial({ color: 0x87CEFA, metalness: 0.7, roughness: 0.3 })
+        );
         cube.castShadow = true;
-        cube.receiveShadow = true;
         scene.add(cube);
-
         camera.position.z = 5;
 
-        let speedLevels = [0, 1, 2, 3, 4, 5]; // 更新速度等級
-        let speedIndex = 1; // 起始速度為 1
+        // 速度設定
+        let speedLevels = [0, 5, 10, 15, 20, 25];
+        let speedIndex = 1;
         let rotateX = 0;
         let rotateY = 0;
         let isMouseDown = false;
-        let touchStartX = 0, touchStartY = 0;
 
+        // 音效設定
+        const rotationSound = new Audio('https://www.fesliyanstudios.com/play-mp3/4380');
+        rotationSound.loop = true;
+        rotationSound.volume = 0;
+        let isRotating = false;
+
+        function updateRotationSound() {
+            let rotationSpeed = Math.abs(rotateX) + Math.abs(rotateY) + speedLevels[speedIndex] * 0.01;
+
+            if (rotationSpeed > 0.005) {
+                if (!isRotating) {
+                    rotationSound.currentTime = 0;
+                    rotationSound.play();
+                    isRotating = true;
+                }
+                rotationSound.volume = Math.min(rotationSpeed * 1.5, 1);
+            } else {
+                if (isRotating && rotationSound.volume > 0.02) {
+                    rotationSound.volume -= 0.01;
+                } else {
+                    rotationSound.pause();
+                    isRotating = false;
+                }
+            }
+        }
+
+        // 速度控制按鈕
         const dots = document.querySelectorAll('.dot');
         function updateSpeed() {
-            dots.forEach((dot, index) => {
-                dot.classList.toggle('active', index < speedIndex);
-            });
+            dots.forEach((dot, index) => dot.classList.toggle('active', index < speedIndex));
         }
         updateSpeed();
 
         document.querySelector('.speed-control').addEventListener('click', () => {
-            speedIndex = (speedIndex + 1) % speedLevels.length; // 切換速度
+            speedIndex = (speedIndex + 1) % speedLevels.length;
             updateSpeed();
         });
 
+        // 監聽滑鼠拖曳
         window.addEventListener('mousedown', () => { isMouseDown = true; });
         window.addEventListener('mouseup', () => { isMouseDown = false; });
 
         window.addEventListener('mousemove', (event) => {
             if (isMouseDown) {
-                rotateX = event.movementY * 0.005;
-                rotateY = event.movementX * 0.005;
+                rotateX = event.movementY * 0.002;
+                rotateY = event.movementX * 0.002;
+                updateRotationSound();
             }
         });
 
-        window.addEventListener('touchstart', (event) => {
-            if (event.touches.length === 1) {
-                touchStartX = event.touches[0].clientX;
-                touchStartY = event.touches[0].clientY;
-            }
-        });
-
-        window.addEventListener('touchmove', (event) => {
-            let touchX = event.touches[0].clientX;
-            let touchY = event.touches[0].clientY;
-            rotateX = (touchY - touchStartY) * 0.005;
-            rotateY = (touchX - touchStartX) * 0.005;
-            touchStartX = touchX;
-            touchStartY = touchY;
-        });
-
+        // Easter Egg 設定
         let clickCountTopCenter = 0;
         let clickTimerTopCenter = null;
 
@@ -144,7 +159,6 @@
 
         window.addEventListener('click', (event) => {
             hideEasterEgg(); // 點擊時隱藏圖片
-
             if (event.clientY < window.innerHeight / 4) { // 判斷是否在上方的區域
                 clickCountTopCenter++;
                 if (clickTimerTopCenter) clearTimeout(clickTimerTopCenter);
@@ -158,19 +172,23 @@
             }
         });
 
-        function animate() {
-            requestAnimationFrame(animate);
-            cube.rotation.x += rotateX + speedLevels[speedIndex] * 0.01; // 根據當前速度進行旋轉
-            cube.rotation.y += rotateY + speedLevels[speedIndex] * 0.01; // 根據當前速度進行旋轉
-            renderer.render(scene, camera);
-        }
-        animate();
-
+        // 窗口調整時重新適配
         window.addEventListener('resize', () => {
-            renderer.setSize(window.innerWidth, window.innerHeight);
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
         });
+
+        // 動畫函式
+        function animate() {
+            requestAnimationFrame(animate);
+            cube.rotation.x += rotateX + speedLevels[speedIndex] * 0.01;
+            cube.rotation.y += rotateY + speedLevels[speedIndex] * 0.01;
+            updateRotationSound();
+            renderer.render(scene, camera);
+        }
+
+        animate();
     </script>
 </body>
 </html>
