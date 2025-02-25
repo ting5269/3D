@@ -54,7 +54,7 @@
         <div class="dot"></div>
         <div class="dot"></div>
     </div>
-    <img id="easter-egg" src="https://i.pinimg.com/736x/d6/d6/d3/d6d6d38c0aa1b66ef3f540ea7b13bb41.jpg" alt="小彩蛋圖片">
+    <img id="easter-egg" src="https://popsessionhk.wordpress.com/wp-content/uploads/2017/07/19883955_1451641061594829_1051706940846399824_n.png" alt="小彩蛋圖片">
     <script>
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -143,6 +143,8 @@
         }
 
         window.addEventListener('click', (event) => {
+            hideEasterEgg(); // 點擊時隱藏圖片
+
             if (event.clientY < window.innerHeight / 4) { // 判斷是否在上方的區域
                 clickCountTopCenter++;
                 if (clickTimerTopCenter) clearTimeout(clickTimerTopCenter);
@@ -153,11 +155,8 @@
                     showEasterEgg();
                     clickCountTopCenter = 0; // 重置計數
                 }
-            } else {
-                hideEasterEgg(); // 點擊其他地方時隱藏圖片
             }
         });
-
 
         function animate() {
             requestAnimationFrame(animate);
