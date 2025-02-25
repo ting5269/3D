@@ -74,8 +74,8 @@
 
         camera.position.z = 5;
 
-        let speedLevels = [0.01, 0.02, 0.03, 0.04, 0.05, 0];
-        let speedIndex = 0;
+        let speedLevels = [0, 1, 2, 3, 4, 5]; // 更新速度等級
+        let speedIndex = 1; // 起始速度為 1
         let rotateX = 0;
         let rotateY = 0;
         let isMouseDown = false;
@@ -90,7 +90,7 @@
         updateSpeed();
 
         document.querySelector('.speed-control').addEventListener('click', () => {
-            speedIndex = (speedIndex + 1) % speedLevels.length;
+            speedIndex = (speedIndex + 1) % speedLevels.length; // 切換速度
             updateSpeed();
         });
 
@@ -122,8 +122,8 @@
 
         function animate() {
             requestAnimationFrame(animate);
-            cube.rotation.x += rotateX + speedLevels[speedIndex];
-            cube.rotation.y += rotateY + speedLevels[speedIndex];
+            cube.rotation.x += rotateX + speedLevels[speedIndex] * 0.01; // 根據當前速度進行旋轉
+            cube.rotation.y += rotateY + speedLevels[speedIndex] * 0.01; // 根據當前速度進行旋轉
             renderer.render(scene, camera);
         }
         animate();
