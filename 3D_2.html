@@ -93,7 +93,8 @@
         let speedIndex = 1;
         let rotateX = 0;
         let rotateY = 0;
-        let isMouseDown = false;
+        let isDragging = false;
+        let lastX = 0, lastY = 0;
 
         // 音效設定
         const rotationSound = new Audio('https://www.fesliyanstudios.com/play-mp3/4380');
@@ -103,7 +104,6 @@
 
         function updateRotationSound() {
             let rotationSpeed = Math.abs(rotateX) + Math.abs(rotateY) + speedLevels[speedIndex] * 0.01;
-
             if (rotationSpeed > 0.005) {
                 if (!isRotating) {
                     rotationSound.currentTime = 0;
@@ -133,21 +133,54 @@
             updateSpeed();
         });
 
-        // 監聽滑鼠拖曳
-        window.addEventListener('mousedown', () => { isMouseDown = true; });
-        window.addEventListener('mouseup', () => { isMouseDown = false; });
-
-        window.addEventListener('mousemove', (event) => {
-            if (isMouseDown) {
-                rotateX = event.movementY * 0.002;
-                rotateY = event.movementX * 0.002;
-                updateRotationSound();
-            }
+        // 滑鼠拖曳支援
+        window.addEventListener('mousedown', (event) => {
+            isDragging = true;
+            lastX = event.clientX;
+            lastY = event.clientY;
         });
 
-        // Easter Egg 設定
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        window.addEventListener('mousemove', (event) => {
+            if (!isDragging) return;
+            let deltaX = event.clientX - lastX;
+            let deltaY = event.clientY - lastY;
+            rotateY = deltaX * 0.002;
+            rotateX = deltaY * 0.002;
+            lastX = event.clientX;
+            lastY = event.clientY;
+            updateRotationSound();
+        });
+
+        // 📱 手機觸控支援
+        window.addEventListener('touchstart', (event) => {
+            isDragging = true;
+            lastX = event.touches[0].clientX;
+            lastY = event.touches[0].clientY;
+            event.preventDefault();  // 避免觸控時畫面滾動
+        });
+
+        window.addEventListener('touchmove', (event) => {
+            if (!isDragging) return;
+            let deltaX = event.touches[0].clientX - lastX;
+            let deltaY = event.touches[0].clientY - lastY;
+            rotateY = deltaX * 0.002;
+            rotateX = deltaY * 0.002;
+            lastX = event.touches[0].clientX;
+            lastY = event.touches[0].clientY;
+            event.preventDefault();  // 避免觸控時畫面滾動
+        });
+
+        window.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        // Easter Egg 點擊觸發
         let clickCountTopCenter = 0;
-        let clickTimerTopCenter = null;
+        let clickTimerTopCenter;
 
         function showEasterEgg() {
             document.getElementById('easter-egg').style.display = 'block';
@@ -158,8 +191,8 @@
         }
 
         window.addEventListener('click', (event) => {
-            hideEasterEgg(); // 點擊時隱藏圖片
-            if (event.clientY < window.innerHeight / 4) { // 判斷是否在上方的區域
+            hideEasterEgg();
+            if (event.clientY < window.innerHeight / 4) {
                 clickCountTopCenter++;
                 if (clickTimerTopCenter) clearTimeout(clickTimerTopCenter);
                 clickTimerTopCenter = setTimeout(() => {
@@ -167,16 +200,9 @@
                 }, 300);
                 if (clickCountTopCenter === 2) {
                     showEasterEgg();
-                    clickCountTopCenter = 0; // 重置計數
+                    clickCountTopCenter = 0;
                 }
             }
-        });
-
-        // 窗口調整時重新適配
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
         // 動畫函式
