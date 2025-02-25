@@ -218,12 +218,13 @@
         // 動畫函式
         function animate() {
             requestAnimationFrame(animate);
-            cube.rotation.x += rotateX + speedLevels[speedIndex] * 0.01;
-            cube.rotation.y += rotateY + speedLevels[speedIndex] * 0.01;
+            if (speedIndex > 0) { // 只有當 speedIndex 大於 0 時，才增加旋轉
+                cube.rotation.x += rotateX + speedLevels[speedIndex] * 0.01;
+                cube.rotation.y += rotateY + speedLevels[speedIndex] * 0.01;
+            }
             updateRotationSound();
             renderer.render(scene, camera);
         }
-
         animate();
     </script>
 </body>
