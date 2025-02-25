@@ -101,6 +101,9 @@
         rotationSound.loop = true;
         rotationSound.volume = 0;
         let isRotating = false;
+        
+        // 添加這一行，初始音效靜音
+        let soundInitialized = false;
 
         function updateRotationSound() {
             let rotationSpeed = Math.abs(rotateX) + Math.abs(rotateY) + speedLevels[speedIndex] * 0.01;
@@ -192,6 +195,13 @@
 
         window.addEventListener('click', (event) => {
             hideEasterEgg();
+            // 在這裡初始化音效
+            if (!soundInitialized) {
+                rotationSound.play();
+                soundInitialized = true;
+            }
+
+            // 其餘的點擊事件邏輯
             if (event.clientY < window.innerHeight / 4) {
                 clickCountTopCenter++;
                 if (clickTimerTopCenter) clearTimeout(clickTimerTopCenter);
